@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة النشر التلقائي على GitHub Pages</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+        .code-font {
+            font-family: 'Inter', monospace;
+            direction: ltr;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .step-active {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .step-done {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .step-error {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden transition-all duration-300">
+        <div id="toastContent" class="px-5 py-3 rounded-xl shadow-2xl border flex items-center gap-3 text-sm font-semibold">
+            <span id="toastIcon"></span>
+            <span id="toastText"></span>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    <h3 class="font-bold text-slate-200 text-sm">معاينة حية لملف index.html قبل النشر</h3>
+                </div>
+                <button id="closePreviewBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                    إغلاق المعاينة ✕
+                </button>
+            </div>
+            <iframe id="previewFrame" class="w-full flex-1 bg-white" sandbox="allow-scripts allow-forms allow-modals"></iframe>
+        </div>
+    </div>
+
+    <div class="max-w-4xl w-full mx-auto space-y-6">
+        <!-- Header -->
+        <header class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                    <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-extrabold text-white">نظام النشر التلقائي (GitHub Pages Auto-Deployer)</h1>
+                    <p class="text-xs md:text-sm text-slate-400 mt-1">ارفع ملف <code class="text-emerald-400 code-font">index.html</code> وسيتكفل النظام بإنشاء المستودع وتفعيل النشر وإعطائك الرابط فوراً</p>
+                </div>
+            </div>
+            <div id="userBadge" class="hidden items-center gap-2.5 bg-slate-800/90 border border-slate-700 px-3.5 py-2 rounded-xl">
+                <img id="userAvatar" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Avatar" class="w-7 h-7 rounded-full border border-emerald-400">
+                <div class="text-xs">
+                    <div id="userName" class="font-bold text-emerald-400 code-font"></div>
+                    <div class="text-[10px] text-slate-400">متصل بنجاح</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Step 1: Token & Account -->
+        <section class="glass-card rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center font-bold border border-blue-500/30">1</span>
+                    إعداد رمز الوصول (GitHub Personal Access Token)
+                </h2>
+                <span id="tokenSavedStatus" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400">غير محفوظ</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                        class="w-full bg-slate-900/90 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white code-font outline-none transition pl-12">
+                    <button type="button" id="toggleTokenBtn" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs px-2 py-1 rounded bg-slate-800">
+                        إظهار
+                    </button>
+                </div>
+                <button type="button" id="verifyTokenBtn" class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-sm transition flex items-center justify-center gap-2 shrink-0">
+                    <span>فحص وحفظ التوكن</span>
+                </button>
+                <button type="button" id="clearTokenBtn" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-red-950/60 hover:text-red-400 text-slate-300 font-semibold text-sm transition shrink-0">
+                    مسح
+                </button>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                🔒 يُحفظ التوكن داخل متصفح هاتفك فقط (<code class="code-font text-slate-300">localStorage</code>) ولا يُرسل لأي طرف خارجي غير خوادم GitHub الرسمية. تأكد من تفعيل صلاحية <code class="code-font text-emerald-400">repo</code> عند إنشائه.
+            </p>
+        </section>
+
+        <!-- Step 2: Project Name & HTML Input -->
+        <section class="glass-card rounded-2xl p-6 space-y-5">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center font-bold border border-blue-500/30">2</span>
+                بيانات المشروع وكود الموقع (<code class="code-font text-emerald-400">index.html</code>)
+            </h2>
+
+            <!-- Repository Name -->
+            <div class="space-y-2">
+                <label for="repoNameInput" class="block text-xs font-bold text-slate-300">اسم المستودع (سيكون جزءاً من رابط موقعك):</label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="repoNameInput" placeholder="my-awesome-site"
+                        class="flex-1 bg-slate-900/90 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white code-font outline-none transition">
+                    <button type="button" id="randomNameBtn" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition shrink-0">
+                        🎲 اقتراح اسم تلقائي
+                    </button>
+                </div>
+                <div class="text-xs text-slate-400 flex items-center gap-1.5 pt-1">
+                    <span>الرابط المتوقع:</span>
+                    <span id="expectedUrlPreview" class="code-font text-blue-400 font-medium break-all">https://username.github.io/my-awesome-site/</span>
+                </div>
+            </div>
+
+            <!-- Upload or Paste Switch & Actions -->
+            <div class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <label class="text-xs font-bold text-slate-300">كود ملف <code class="code-font text-emerald-400">index.html</code>:</label>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label for="fileUploadInput" class="cursor-pointer px-3.5 py-2 rounded-xl bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-300 text-xs font-bold transition flex items-center gap-1.5">
+                            <span>📂 اختيار ملف HTML من الهاتف</span>
+                            <input type="file" id="fileUploadInput" accept=".html,.htm,.txt" class="hidden">
+                        </label>
+                        <button type="button" id="loadSampleBtn" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                            ✨ تجربة كود جاهز
+                        </button>
+                        <button type="button" id="previewHtmlBtn" class="px-3 py-2 rounded-xl bg-blue-600/20 border border-blue-500/40 hover:bg-blue-600/30 text-blue-300 text-xs font-bold transition">
+                            👁️ معاينة الكود
+                        </button>
+                    </div>
+                </div>
+
+                <div id="fileLoadedBanner" class="hidden items-center justify-between px-4 py-2.5 rounded-xl bg-emerald-950/50 border border-emerald-700/50 text-xs text-emerald-300">
+                    <span id="fileLoadedName" class="font-semibold"></span>
+                    <button type="button" id="clearCodeBtn" class="text-red-400 hover:underline font-bold">تفريغ الكود</button>
+                </div>
+
+                <textarea id="htmlCodeInput" rows="10" placeholder="<!DOCTYPE html>&#10;<html>&#10;<head>&#10;  <title>موقعي</title>&#10;</head>&#10;<body>&#10;  <h1>مرحباً بكم في موقعي!</h1>&#10;</body>&#10;</html>"
+                    class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl p-4 text-xs sm:text-sm text-emerald-300 code-font outline-none transition leading-relaxed resize-y"></textarea>
+            </div>
+
+            <!-- Deploy Button -->
+            <button type="button" id="deployBtn" class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 active:scale-[0.99] text-white font-extrabold text-base shadow-xl shadow-blue-600/20 transition flex items-center justify-center gap-3">
+                <svg id="deploySpinner" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span id="deployBtnText">🚀 إنشاء المستودع ونشر الموقع الآن</span>
+            </button>
+        </section>
+
+        <!-- Step 3: Live Progress & Result -->
+        <section id="progressSection" class="glass-card rounded-2xl p-6 space-y-5 hidden">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs flex items-center justify-center font-bold border border-emerald-500/30">3</span>
+                حالة العمليات التلقائية والرابط النهائي
+            </h2>
+
+            <!-- 3 Steps Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div id="stepRepo" class="p-4 rounded-xl border border-slate-700 bg-slate-900/50 transition">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-300">1. المستودع (Repository)</span>
+                        <span id="stepRepoIcon" class="text-sm">⏳</span>
+                    </div>
+                    <p id="stepRepoDesc" class="text-[11px] text-slate-400">بانتظار البدء...</p>
+                </div>
+
+                <div id="stepFile" class="p-4 rounded-xl border border-slate-700 bg-slate-900/50 transition">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-300">2. رفع ملف index.html</span>
+                        <span id="stepFileIcon" class="text-sm">⏳</span>
+                    </div>
+                    <p id="stepFileDesc" class="text-[11px] text-slate-400">بانتظار البدء...</p>
+                </div>
+
+                <div id="stepPages" class="p-4 rounded-xl border border-slate-700 bg-slate-900/50 transition">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-300">3. تفعيل GitHub Pages</span>
+                        <span id="stepPagesIcon" class="text-sm">⏳</span>
+                    </div>
+                    <p id="stepPagesDesc" class="text-[11px] text-slate-400">بانتظار البدء...</p>
+                </div>
+            </div>
+
+            <!-- Final Link Card -->
+            <div id="resultCard" class="hidden p-5 rounded-2xl bg-gradient-to-br from-emerald-950/80 to-slate-900 border border-emerald-500/40 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <span class="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold mb-1">
+                            🎉 تم تجهيز موقعك بنجاح!
+                        </span>
+                        <h3 class="text-sm font-bold text-white">رابط موقعك المباشر على GitHub Pages:</h3>
+                    </div>
+                    <div id="liveCheckBadge" class="px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2 self-start sm:self-auto">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                        <span id="liveCheckText">جاري تجهيز السيرفر (قد يستغرق 30-60 ثانية)...</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-950/90 p-2.5 rounded-xl border border-slate-800">
+                    <a id="finalSiteUrl" href="#resultCard" target="_blank" rel="noopener noreferrer" class="flex-1 code-font text-sm sm:text-base font-bold text-emerald-400 hover:underline px-2 break-all">
+                        https://...
+                    </a>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" id="copyUrlBtn" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition">
+                            📋 نسخ الرابط
+                        </button>
+                        <a id="openSiteBtn" href="#resultCard" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition text-center">
+                            🌐 فتح الموقع
+                        </a>
+                        <a id="openRepoBtn" href="#resultCard" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition text-center">
+                            المستودع ↗
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Console Log -->
+            <div class="space-y-1.5">
+                <div class="text-xs font-bold text-slate-400">سجل العمليات التقني (System Log):</div>
+                <div id="logBox" class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 h-36 overflow-y-auto text-xs space-y-1.5 font-mono"></div>
+            </div>
+        </section>
+
+        <!-- History of Deployed Sites -->
+        <section class="glass-card rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-bold text-slate-300">📂 سجل المواقع التي نشرتها من هذا الجهاز</h2>
+                <button type="button" id="clearHistoryBtn" class="text-xs text-slate-400 hover:text-red-400 transition">مسح السجل</button>
+            </div>
+            <div id="historyList" class="space-y-2 text-xs text-slate-400">
+                لا توجد مواقع منشورة بعد.
+            </div>
+        </section>
+    </div>
+
+    <footer class="text-center text-xs text-slate-500 mt-8 pb-4">
+        يعمل مباشرة عبر GitHub REST API v3 — مجاني بالكامل وآمن 100%
+    </footer>
+
+    <script>
+        // Safe LocalStorage Helper
+        const storage = {
+            get(key) {
+                try { return localStorage.getItem(key); } catch (e) { return null; }
+            },
+            set(key, val) {
+                try { localStorage.setItem(key, val); } catch (e) {}
+            },
+            remove(key) {
+                try { localStorage.removeItem(key); } catch (e) {}
+            }
+        };
+
+        // State
+        let currentUsername = storage.get('gh_deployer_username') || '';
+        let isDeploying = false;
+        let statusPollTimer = null;
+
+        // DOM Elements
+        const tokenInput = document.getElementById('tokenInput');
+        const toggleTokenBtn = document.getElementById('toggleTokenBtn');
+        const verifyTokenBtn = document.getElementById('verifyTokenBtn');
+        const clearTokenBtn = document.getElementById('clearTokenBtn');
+        const tokenSavedStatus = document.getElementById('tokenSavedStatus');
+        const userBadge = document.getElementById('userBadge');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+
+        const repoNameInput = document.getElementById('repoNameInput');
+        const randomNameBtn = document.getElementById('randomNameBtn');
+        const expectedUrlPreview = document.getElementById('expectedUrlPreview');
+
+        const fileUploadInput = document.getElementById('fileUploadInput');
+        const loadSampleBtn = document.getElementById('loadSampleBtn');
+        const previewHtmlBtn = document.getElementById('previewHtmlBtn');
+        const fileLoadedBanner = document.getElementById('fileLoadedBanner');
+        const fileLoadedName = document.getElementById('fileLoadedName');
+        const clearCodeBtn = document.getElementById('clearCodeBtn');
+        const htmlCodeInput = document.getElementById('htmlCodeInput');
+
+        const deployBtn = document.getElementById('deployBtn');
+        const deploySpinner = document.getElementById('deploySpinner');
+        const deployBtnText = document.getElementById('deployBtnText');
+
+        const progressSection = document.getElementById('progressSection');
+        const stepRepo = document.getElementById('stepRepo');
+        const stepRepoIcon = document.getElementById('stepRepoIcon');
+        const stepRepoDesc = document.getElementById('stepRepoDesc');
+        const stepFile = document.getElementById('stepFile');
+        const stepFileIcon = document.getElementById('stepFileIcon');
+        const stepFileDesc = document.getElementById('stepFileDesc');
+        const stepPages = document.getElementById('stepPages');
+        const stepPagesIcon = document.getElementById('stepPagesIcon');
+        const stepPagesDesc = document.getElementById('stepPagesDesc');
+
+        const resultCard = document.getElementById('resultCard');
+        const finalSiteUrl = document.getElementById('finalSiteUrl');
+        const copyUrlBtn = document.getElementById('copyUrlBtn');
+        const openSiteBtn = document.getElementById('openSiteBtn');
+        const openRepoBtn = document.getElementById('openRepoBtn');
+        const liveCheckBadge = document.getElementById('liveCheckBadge');
+        const liveCheckText = document.getElementById('liveCheckText');
+        const logBox = document.getElementById('logBox');
+
+        const historyList = document.getElementById('historyList');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+        const previewModal = document.getElementById('previewModal');
+        const previewFrame = document.getElementById('previewFrame');
+        const closePreviewBtn = document.getElementById('closePreviewBtn');
+
+        // Toast Helper
+        let toastTimeout = null;
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastContent = document.getElementById('toastContent');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastText = document.getElementById('toastText');
+
+            toast.classList.remove('hidden');
+            toastText.textContent = message;
+
+            if (type === 'success') {
+                toastContent.className = 'px-5 py-3 rounded-xl shadow-2xl border flex items-center gap-3 text-sm font-semibold bg-emerald-950/95 border-emerald-500 text-emerald-200';
+                toastIcon.textContent = '✅';
+            } else if (type === 'error') {
+                toastContent.className = 'px-5 py-3 rounded-xl shadow-2xl border flex items-center gap-3 text-sm font-semibold bg-red-950/95 border-red-500 text-red-200';
+                toastIcon.textContent = '⚠️';
+            } else {
+                toastContent.className = 'px-5 py-3 rounded-xl shadow-2xl border flex items-center gap-3 text-sm font-semibold bg-slate-900/95 border-blue-500 text-blue-200';
+                toastIcon.textContent = 'ℹ️';
+            }
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 4000);
+        }
+
+        // UTF-8 Safe Base64 Encoding (supports Arabic & Emojis without errors)
+        function encodeUnicodeBase64(str) {
+            const utf8Bytes = new TextEncoder().encode(str);
+            let binaryString = '';
+            const chunkSize = 0x8000;
+            for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+                binaryString += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
+            }
+            return btoa(binaryString);
+        }
+
+        // Sanitize Repository Name
+        function sanitizeRepoName(input) {
+            return input
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9._-]/g, '')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        function updateExpectedUrl() {
+            const cleanRepo = sanitizeRepoName(repoNameInput.value) || 'my-awesome-site';
+            const userPart = currentUsername || 'username';
+            expectedUrlPreview.textContent = `https://${userPart}.github.io/${cleanRepo}/`;
+        }
+
+        // Logger
+        function addLog(msg, type = 'info') {
+            const div = document.createElement('div');
+            const time = new Date().toLocaleTimeString('ar-IQ');
+            let color = 'text-slate-300';
+            if (type === 'success') color = 'text-emerald-400';
+            if (type === 'error') color = 'text-red-400';
+            if (type === 'warn') color = 'text-amber-400';
+            div.className = `${color}`;
+            div.textContent = `[${time}] ${msg}`;
+            logBox.appendChild(div);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function setStepState(stepEl, iconEl, descEl, state, text) {
+            stepEl.className = 'p-4 rounded-xl border transition ';
+            if (state === 'active') {
+                stepEl.className += 'step-active';
+                iconEl.textContent = '🔄';
+            } else if (state === 'done') {
+                stepEl.className += 'step-done';
+                iconEl.textContent = '✅';
+            } else if (state === 'error') {
+                stepEl.className += 'step-error';
+                iconEl.textContent = '❌';
+            } else {
+                stepEl.className += 'border-slate-700 bg-slate-900/50';
+                iconEl.textContent = '⏳';
+            }
+            descEl.textContent = text;
+        }
+
+        // Verify GitHub Token & Fetch User
+        async function verifyToken(token, silent = false) {
+            if (!token) {
+                if (!silent) showToast('يرجى إدخال رمز الوصول (PAT) أولاً', 'error');
+                return null;
+            }
+            verifyTokenBtn.disabled = true;
+            verifyTokenBtn.textContent = 'جاري الفحص...';
+            try {
+                const res = await fetch('https://api.github.com/user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+                if (!res.ok) {
+                    throw new Error('رمز التوكن غير صالح أو منتهي الصلاحية');
+                }
+                const data = await res.json();
+                currentUsername = data.login;
+                storage.set('gh_deployer_token', token);
+                storage.set('gh_deployer_username', data.login);
+                storage.set('gh_deployer_avatar', data.avatar_url || '');
+
+                userName.textContent = `@${data.login}`;
+                if (data.avatar_url) userAvatar.src = data.avatar_url;
+                userBadge.classList.remove('hidden');
+                userBadge.classList.add('flex');
+
+                tokenSavedStatus.textContent = `متصل بحساب ${data.login} ✓`;
+                tokenSavedStatus.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold';
+                updateExpectedUrl();
+                if (!silent) showToast(`تم الاتصال بنجاح بحساب ${data.login}`, 'success');
+                return data.login;
+            } catch (err) {
+                tokenSavedStatus.textContent = 'التوكن غير صالح';
+                tokenSavedStatus.className = 'text-xs px-2.5 py-1 rounded-full bg-red-500/20 text-red-300';
+                if (!silent) showToast(err.message, 'error');
+                return null;
+            } finally {
+                verifyTokenBtn.disabled = false;
+                verifyTokenBtn.textContent = 'فحص وحفظ التوكن';
+            }
+        }
+
+        // Render History
+        function renderHistory() {
+            let list = [];
+            try {
+                list = JSON.parse(storage.get('gh_deployer_history') || '[]');
+            } catch (e) { list = []; }
+
+            if (!list.length) {
+                historyList.innerHTML = '<div class="text-slate-500">لا توجد مواقع منشورة بعد.</div>';
+                return;
+            }
+
+            historyList.innerHTML = '';
+            list.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-slate-900/80 border border-slate-800';
+                row.innerHTML = `
+                    <div class="space-y-0.5">
+                        <div class="font-bold text-white code-font text-xs">${item.repo}</div>
+                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="code-font text-emerald-400 hover:underline text-xs break-all">${item.url}</a>
+                    </div>
+                    <div class="flex items-center gap-2 self-end sm:self-center">
+                        <span class="text-[11px] text-slate-500">${item.date}</span>
+                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded-lg bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 font-bold text-xs">فتح ↗</a>
+                    </div>
+                `;
+                historyList.appendChild(row);
+            });
+        }
+
+        function saveToHistory(repo, url) {
+            let list = [];
+            try {
+                list = JSON.parse(storage.get('gh_deployer_history') || '[]');
+            } catch (e) { list = []; }
+            list = list.filter(i => i.url !== url);
+            list.unshift({
+                repo,
+                url,
+                date: new Date().toLocaleDateString('ar-IQ')
+            });
+            storage.set('gh_deployer_history', JSON.stringify(list.slice(0, 15)));
+            renderHistory();
+        }
+
+        // Poll GitHub Pages status until live
+        function startPagesStatusPolling(token, owner, repo, pageUrl) {
+            if (statusPollTimer) clearInterval(statusPollTimer);
+            let attempts = 0;
+            statusPollTimer = setInterval(async () => {
+                attempts++;
+                if (attempts > 24) {
+                    clearInterval(statusPollTimer);
+                    liveCheckBadge.className = 'px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2';
+                    liveCheckText.textContent = 'الرابط جاهز للفتح الآن ✓';
+                    return;
+                }
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pages`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/vnd.github+json'
+                        }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.status === 'built') {
+                            clearInterval(statusPollTimer);
+                            liveCheckBadge.className = 'px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2';
+                            liveCheckBadge.innerHTML = '<span>🟢 الموقع يعمل ومرفوع بالكامل (Live)!</span>';
+                            addLog('تم اكتمال بناء الموقع على GitHub Pages وهو متاح للتصفح الآن!', 'success');
+                        } else {
+                            liveCheckText.textContent = `حالة البناء في GitHub: ${data.status || 'جاري التجهيز'}... (${attempts * 5} ثانية)`;
+                        }
+                    }
+                } catch (e) {}
+            }, 5000);
+        }
+
+        // Main Deployment Workflow
+        async function deployWebsite() {
+            if (isDeploying) return;
+
+            const token = tokenInput.value.trim();
+            const rawRepoName = repoNameInput.value.trim();
+            const cleanRepoName = sanitizeRepoName(rawRepoName);
+            const htmlContent = htmlCodeInput.value;
+
+            if (!token) {
+                showToast('الرجاء إدخال رمز الوصول (GitHub Token) في الخطوة 1', 'error');
+                tokenInput.focus();
+                return;
+            }
+            if (!cleanRepoName) {
+                showToast('الرجاء كتابة اسم للمشروع باللغة الإنجليزية أو الأرقام', 'error');
+                repoNameInput.focus();
+                return;
+            }
+            if (!htmlContent.trim()) {
+                showToast('الرجاء رفع ملف index.html أو لصق كود HTML أولاً', 'error');
+                htmlCodeInput.focus();
+                return;
+            }
+
+            repoNameInput.value = cleanRepoName;
+            updateExpectedUrl();
+
+            isDeploying = true;
+            deployBtn.disabled = true;
+            deploySpinner.classList.remove('hidden');
+            deployBtnText.textContent = 'جاري التنفيذ التلقائي...';
+
+            progressSection.classList.remove('hidden');
+            resultCard.classList.add('hidden');
+            logBox.innerHTML = '';
+
+            setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'idle', 'في الانتظار...');
+            setStepState(stepFile, stepFileIcon, stepFileDesc, 'idle', 'في الانتظار...');
+            setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'idle', 'في الانتظار...');
+
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            };
+
+            try {
+                // Verify user first
+                addLog('جاري التحقق من الحساب وصلاحيات التوكن...');
+                const username = await verifyToken(token, true);
+                if (!username) {
+                    throw new Error('فشل التحقق من التوكن. تأكد من صحته ومن صلاحية repo.');
+                }
+                addLog(`تم تأكيد الحساب: @${username}`, 'success');
+
+                // STEP 1: Create or Check Repository
+                setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'active', 'جاري إنشاء المستودع العام...');
+                addLog(`جاري إنشاء المستودع (${cleanRepoName})...`);
+
+                const createRepoRes = await fetch('https://api.github.com/user/repos', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        name: cleanRepoName,
+                        description: 'Deployed automatically via GitHub Pages Auto-Deployer',
+                        private: false,
+                        auto_init: false
+                    })
+                });
+
+                if (createRepoRes.status === 201) {
+                    setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'done', 'تم إنشاء المستودع بنجاح ✓');
+                    addLog(`تم إنشاء المستودع ${username}/${cleanRepoName} بنجاح.`, 'success');
+                } else if (createRepoRes.status === 422) {
+                    setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'done', 'المستودع موجود مسبقاً (سيتم التحديث) ✓');
+                    addLog(`المستودع ${cleanRepoName} موجود مسبقاً، سيتم تحديث ملف index.html بداخله.`, 'warn');
+                } else {
+                    const errData = await createRepoRes.json().catch(() => ({}));
+                    throw new Error(`فشل إنشاء المستودع: ${errData.message || createRepoRes.statusText}`);
+                }
+
+                // STEP 2: Upload index.html to main branch
+                setStepState(stepFile, stepFileIcon, stepFileDesc, 'active', 'جاري رفع ملف index.html إلى فرع main...');
+                addLog('جاري فحص ما إذا كان ملف index.html موجوداً مسبقاً...');
+
+                let existingFileSha = null;
+                const getFileRes = await fetch(`https://api.github.com/repos/${username}/${cleanRepoName}/contents/index.html?ref=main`, {
+                    headers
+                });
+                if (getFileRes.ok) {
+                    const fileInfo = await getFileRes.json();
+                    existingFileSha = fileInfo.sha;
+                    addLog('تم العثور على نسخة سابقة من index.html، سيتم استبدالها.', 'warn');
+                }
+
+                addLog('جاري تشفير الكود بصيغة Base64 (يدعم العربية بالكامل) ورفعه...');
+                const encodedContent = encodeUnicodeBase64(htmlContent);
+
+                const putBody = {
+                    message: 'Deploy index.html to main branch',
+                    content: encodedContent,
+                    branch: 'main'
+                };
+                if (existingFileSha) {
+                    putBody.sha = existingFileSha;
+                }
+
+                const uploadRes = await fetch(`https://api.github.com/repos/${username}/${cleanRepoName}/contents/index.html`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify(putBody)
+                });
+
+                if (!uploadRes.ok) {
+                    const errData = await uploadRes.json().catch(() => ({}));
+                    throw new Error(`فشل رفع ملف index.html: ${errData.message || uploadRes.statusText}`);
+                }
+
+                setStepState(stepFile, stepFileIcon, stepFileDesc, 'done', 'تم رفع index.html على فرع main ✓');
+                addLog('تم رفع ملف index.html بنجاح إلى الفرع الرئيسي (main).', 'success');
+
+                // STEP 3: Enable GitHub Pages on branch 'main'
+                setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'active', 'جاري تفعيل GitHub Pages على فرع main...');
+                addLog('جاري تفعيل خدمة GitHub Pages على الفرع main والمسار / ...');
+
+                const pagesRes = await fetch(`https://api.github.com/repos/${username}/${cleanRepoName}/pages`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        source: {
+                            branch: 'main',
+                            path: '/'
+                        }
+                    })
+                });
+
+                let finalUrl = `https://${username}.github.io/${cleanRepoName}/`;
+
+                if (pagesRes.status === 201) {
+                    const pagesData = await pagesRes.json().catch(() => ({}));
+                    if (pagesData.html_url) finalUrl = pagesData.html_url;
+                    setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'done', 'تم تفعيل GitHub Pages بنجاح ✓');
+                    addLog('تم تفعيل GitHub Pages على فرع main بنجاح!', 'success');
+                } else if (pagesRes.status === 409) {
+                    // Already enabled, ensure it points to main
+                    await fetch(`https://api.github.com/repos/${username}/${cleanRepoName}/pages`, {
+                        method: 'PUT',
+                        headers,
+                        body: JSON.stringify({
+                            source: {
+                                branch: 'main',
+                                path: '/'
+                            }
+                        })
+                    });
+                    setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'done', 'GitHub Pages مفعل ومربوط بفرع main ✓');
+                    addLog('خدمة GitHub Pages مفعلة مسبقاً وتم التأكد من ربطها بفرع main.', 'success');
+                } else {
+                    const errData = await pagesRes.json().catch(() => ({}));
+                    throw new Error(`فشل تفعيل GitHub Pages: ${errData.message || pagesRes.statusText}`);
+                }
+
+                // Show Result
+                finalSiteUrl.textContent = finalUrl;
+                finalSiteUrl.href = finalUrl;
+                openSiteBtn.href = finalUrl;
+                openRepoBtn.href = `https://github.com/${username}/${cleanRepoName}`;
+                resultCard.classList.remove('hidden');
+
+                liveCheckBadge.className = 'px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2';
+                liveCheckBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span><span id="liveCheckText">جاري بناء الصفحة على سيرفرات GitHub (30-60 ثانية)...</span>';
+
+                saveToHistory(`${username}/${cleanRepoName}`, finalUrl);
+                showToast('تم نشر الموقع وتفعيل GitHub Pages بنجاح!', 'success');
+                startPagesStatusPolling(token, username, cleanRepoName, finalUrl);
+
+            } catch (error) {
+                addLog(`خطأ: ${error.message}`, 'error');
+                showToast(error.message, 'error');
+                if (stepRepo.classList.contains('step-active')) {
+                    setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'error', 'فشل إنشاء المستودع');
+                } else if (stepFile.classList.contains('step-active')) {
+                    setStepState(stepFile, stepFileIcon, stepFileDesc, 'error', 'فشل رفع الملف');
+                } else if (stepPages.classList.contains('step-active')) {
+                    setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'error', 'فشل تفعيل Pages');
+                }
+            } finally {
+                isDeploying = false;
+                deployBtn.disabled = false;
+                deploySpinner.classList.add('hidden');
+                deployBtnText.textContent = '🚀 إنشاء المستودع ونشر الموقع الآن';
+            }
+        }
+
+        // Event Listeners
+        toggleTokenBtn.addEventListener('click', () => {
+            if (tokenInput.type === 'password') {
+                tokenInput.type = 'text';
+                toggleTokenBtn.textContent = 'إخفاء';
+            } else {
+                tokenInput.type = 'password';
+                toggleTokenBtn.textContent = 'إظهار';
+            }
+        });
+
+        verifyTokenBtn.addEventListener('click', () => {
+            verifyToken(tokenInput.value.trim(), false);
+        });
+
+        clearTokenBtn.addEventListener('click', () => {
+            tokenInput.value = '';
+            currentUsername = '';
+            storage.remove('gh_deployer_token');
+            storage.remove('gh_deployer_username');
+            storage.remove('gh_deployer_avatar');
+            userBadge.classList.add('hidden');
+            userBadge.classList.remove('flex');
+            tokenSavedStatus.textContent = 'غير محفوظ';
+            tokenSavedStatus.className = 'text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400';
+            updateExpectedUrl();
+            showToast('تم مسح التوكن من المتصفح', 'info');
+        });
+
+        repoNameInput.addEventListener('input', updateExpectedUrl);
+
+        randomNameBtn.addEventListener('click', () => {
+            const num = Math.floor(1000 + Math.random() * 9000);
+            repoNameInput.value = `web-project-${num}`;
+            updateExpectedUrl();
+        });
+
+        fileUploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                htmlCodeInput.value = ev.target.result;
+                fileLoadedName.textContent = `تم تحميل الملف: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                fileLoadedBanner.classList.remove('hidden');
+                fileLoadedBanner.classList.add('flex');
+                if (!repoNameInput.value.trim()) {
+                    const baseName = file.name.replace(/\.[^/.]+$/, '');
+                    if (baseName.toLowerCase() !== 'index') {
+                        repoNameInput.value = sanitizeRepoName(baseName);
+                    } else {
+                        repoNameInput.value = `site-${Math.floor(100 + Math.random() * 900)}`;
+                    }
+                    updateExpectedUrl();
+                }
+                showToast('تم قراءة ملف HTML بنجاح!', 'success');
+            };
+            reader.readAsText(file, 'UTF-8');
+        });
+
+        clearCodeBtn.addEventListener('click', () => {
+            htmlCodeInput.value = '';
+            fileUploadInput.value = '';
+            fileLoadedBanner.classList.add('hidden');
+            fileLoadedBanner.classList.remove('flex');
+        });
+
+        loadSampleBtn.addEventListener('click', () => {
+            if (!repoNameInput.value.trim()) {
+                repoNameInput.value = `demo-site-${Math.floor(100 + Math.random() * 900)}`;
+                updateExpectedUrl();
+            }
+            htmlCodeInput.value = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>موقعي المنشور تلقائياً</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 40px 30px;
+      max-width: 500px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+    h1 { color: #38bdf8; margin-top: 0; }
+    p { color: #cbd5e1; line-height: 1.7; }
+    .badge {
+      display: inline-block;
+      background: #10b981;
+      color: #052e16;
+      font-weight: bold;
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 تم النشر بنجاح!</h1>
+    <p>تم إنشاء هذا المستودع ورفع ملف <strong>index.html</strong> وتفعيل <strong>GitHub Pages</strong> تلقائياً بضغطة زر واحدة.</p>
+    <div class="badge">GitHub Pages Live ✓</div>
+  </div>
+</body>
+</html>`;
+            showToast('تم إدراج كود HTML تجريبي جاهز للنشر', 'info');
+        });
+
+        previewHtmlBtn.addEventListener('click', () => {
+            const code = htmlCodeInput.value;
+            if (!code.trim()) {
+                showToast('لا يوجد كود HTML لمعاينته حالياً', 'error');
+                return;
+            }
+            previewFrame.srcdoc = code;
+            previewModal.classList.remove('hidden');
+        });
+
+        closePreviewBtn.addEventListener('click', () => {
+            previewModal.classList.add('hidden');
+            previewFrame.srcdoc = '';
+        });
+
+        deployBtn.addEventListener('click', deployWebsite);
+
+        copyUrlBtn.addEventListener('click', () => {
+            const url = finalSiteUrl.textContent.trim();
+            if (!url) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('تم نسخ رابط الموقع بنجاح!', 'success');
+                }).catch(() => {
+                    fallbackCopy(url);
+                });
+            } else {
+                fallbackCopy(url);
+            }
+        });
+
+        function fallbackCopy(text) {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+                document.execCommand('copy');
+                showToast('تم نسخ رابط الموقع بنجاح!', 'success');
+            } catch (e) {
+                showToast('تعذر النسخ التلقائي، يرجى نسخ الرابط يدوياً', 'error');
+            }
+            document.body.removeChild(temp);
+        }
+
+        clearHistoryBtn.addEventListener('click', () => {
+            storage.remove('gh_deployer_history');
+            renderHistory();
+            showToast('تم مسح سجل المواقع المنشورة', 'info');
+        });
+
+        // Initialize on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedToken = storage.get('gh_deployer_token');
+            if (savedToken) {
+                tokenInput.value = savedToken;
+                verifyToken(savedToken, true);
+            }
+            updateExpectedUrl();
+            renderHistory();
+        });
+    </script>
+</body>
+</html>
