@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة النشر التلقائي على GitHub Pages</title>
+    <title>استوديو إدارة ونشر مواقع GitHub Pages المتكامل</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -17,7 +17,7 @@
             direction: ltr;
         }
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
+            background: rgba(30, 41, 59, 0.72);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
@@ -32,6 +32,15 @@
         .step-error {
             border-color: #ef4444;
             background: rgba(239, 68, 68, 0.1);
+        }
+        .mode-tab-active {
+            background: linear-gradient(135deg, #2563eb, #059669);
+            color: #ffffff;
+            border-color: transparent;
+        }
+        .repo-card-selected {
+            border-color: #10b981 !important;
+            background: rgba(16, 185, 129, 0.12) !important;
         }
         ::-webkit-scrollbar {
             width: 8px;
@@ -59,15 +68,15 @@
         </div>
     </div>
 
-    <!-- Preview Modal -->
+    <!-- Live HTML Preview Modal -->
     <div id="previewModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden shadow-2xl">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl h-[82vh] flex flex-col overflow-hidden shadow-2xl">
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950">
                 <div class="flex items-center gap-2">
                     <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                    <h3 class="font-bold text-slate-200 text-sm">معاينة حية لملف index.html قبل النشر</h3>
+                    <h3 class="font-bold text-slate-200 text-sm">معاينة حية للكود قبل الحفظ والنشر</h3>
                 </div>
-                <button id="closePreviewBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                <button type="button" id="closePreviewBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
                     إغلاق المعاينة ✕
                 </button>
             </div>
@@ -75,7 +84,29 @@
         </div>
     </div>
 
-    <div class="max-w-4xl w-full mx-auto space-y-6">
+    <!-- Delete Repository Confirmation Modal -->
+    <div id="deleteRepoModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-red-500/40 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center gap-3 text-red-400">
+                <span class="text-2xl">⚠️</span>
+                <h3 class="font-extrabold text-base text-white">تأكيد حذف المستودع نهائياً</h3>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                هل أنت متأكد من حذف المستودع <span id="deleteRepoTargetName" class="code-font font-bold text-red-400"></span>؟ هذا الإجراء لا يمكن التراجع عنه وسيوقف موقع GitHub Pages المرتبط به.
+                <br><span class="text-[11px] text-slate-400">(ملاحظة: يتطلب الحذف أن يكون التوكن مفعلاً بصلاحية <code class="code-font">delete_repo</code>).</span>
+            </p>
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button type="button" id="cancelDeleteRepoBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">
+                    إلغاء
+                </button>
+                <button type="button" id="confirmDeleteRepoBtn" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition">
+                    نعم، احذف المستودع
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-5xl w-full mx-auto space-y-6">
         <!-- Header -->
         <header class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
@@ -85,15 +116,15 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-extrabold text-white">نظام النشر التلقائي (GitHub Pages Auto-Deployer)</h1>
-                    <p class="text-xs md:text-sm text-slate-400 mt-1">ارفع ملف <code class="text-emerald-400 code-font">index.html</code> وسيتكفل النظام بإنشاء المستودع وتفعيل النشر وإعطائك الرابط فوراً</p>
+                    <h1 class="text-xl md:text-2xl font-extrabold text-white">استوديو GitHub Pages المتكامل (نشر + إدارة وتعديل)</h1>
+                    <p class="text-xs md:text-sm text-slate-400 mt-1">أنشئ مواقع جديدة أو تصفح مستودعاتك الحالية، واسحب كود أي مستودع وعدله أو غير اسمه بضغطة زر</p>
                 </div>
             </div>
             <div id="userBadge" class="hidden items-center gap-2.5 bg-slate-800/90 border border-slate-700 px-3.5 py-2 rounded-xl">
                 <img id="userAvatar" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Avatar" class="w-7 h-7 rounded-full border border-emerald-400">
                 <div class="text-xs">
                     <div id="userName" class="font-bold text-emerald-400 code-font"></div>
-                    <div class="text-[10px] text-slate-400">متصل بنجاح</div>
+                    <div id="userRepoCount" class="text-[10px] text-slate-400">متصل بنجاح</div>
                 </div>
             </div>
         </header>
@@ -124,20 +155,106 @@
                 </button>
             </div>
             <p class="text-xs text-slate-400 leading-relaxed">
-                🔒 يُحفظ التوكن داخل متصفح هاتفك فقط (<code class="code-font text-slate-300">localStorage</code>) ولا يُرسل لأي طرف خارجي غير خوادم GitHub الرسمية. تأكد من تفعيل صلاحية <code class="code-font text-emerald-400">repo</code> عند إنشائه.
+                🔒 يُحفظ التوكن داخل متصفح هاتفك فقط (<code class="code-font text-slate-300">localStorage</code>) وبمجرد الاتصال سيقوم بجلب جميع مستودعات حسابك تلقائياً لتتمكن من التعديل عليها.
             </p>
         </section>
 
-        <!-- Step 2: Project Name & HTML Input -->
+        <!-- Step 2: Mode Switcher (Create New vs Manage & Edit Existing) -->
         <section class="glass-card rounded-2xl p-6 space-y-5">
-            <h2 class="text-base font-bold text-white flex items-center gap-2">
-                <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center font-bold border border-blue-500/30">2</span>
-                بيانات المشروع وكود الموقع (<code class="code-font text-emerald-400">index.html</code>)
-            </h2>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center font-bold border border-blue-500/30">2</span>
+                    اختر العملية المطلوبة:
+                </h2>
+                <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+                    <button type="button" id="modeCreateBtn" class="px-4 py-2.5 rounded-lg text-xs font-extrabold transition mode-tab-active">
+                        ✨ إنشاء موقع ومستودع جديد
+                    </button>
+                    <button type="button" id="modeEditBtn" class="px-4 py-2.5 rounded-lg text-xs font-extrabold text-slate-300 hover:text-white transition">
+                        📂 مستودعاتي (تعديل الكود / الإعدادات)
+                    </button>
+                </div>
+            </div>
 
-            <!-- Repository Name -->
-            <div class="space-y-2">
-                <label for="repoNameInput" class="block text-xs font-bold text-slate-300">اسم المستودع (سيكون جزءاً من رابط موقعك):</label>
+            <!-- EXISTING REPOSITORIES BROWSER & SETTINGS (Hidden in Create Mode) -->
+            <div id="existingReposPanel" class="hidden space-y-5">
+                <!-- Search & Refresh Bar -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                    <div class="relative flex-1">
+                        <input type="text" id="repoSearchInput" placeholder="🔍 ابحث في مستودعاتك بالاسم أو الوصف..."
+                            class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition">
+                    </div>
+                    <button type="button" id="refreshReposBtn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0">
+                        <span>🔄 تحديث قائمة المستودعات</span>
+                    </button>
+                </div>
+
+                <!-- Repositories Grid List -->
+                <div id="reposGridContainer" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto p-1">
+                    <div class="col-span-2 text-center py-8 text-xs text-slate-400">
+                        اضغط على "فحص التوكن وجلب المستودعات" بالأعلى لعرض مستودعاتك هنا...
+                    </div>
+                </div>
+
+                <!-- Selected Repository Settings & File Selector Card -->
+                <div id="selectedRepoManager" class="hidden p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/40 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <h3 class="text-sm font-extrabold text-white">إدارة المستودع المحدد: <span id="activeRepoTitle" class="code-font text-emerald-400"></span></h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="activeRepoPagesBadge" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300"></span>
+                            <a id="activeRepoGithubLink" href="#selectedRepoManager" target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold">
+                                فتح في GitHub ↗
+                            </a>
+                            <button type="button" id="openDeleteModalBtn" class="px-3 py-1 rounded-lg bg-red-950/70 hover:bg-red-900/80 border border-red-500/30 text-red-300 text-xs font-bold transition">
+                                🗑️ حذف المستودع
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Rename & Description & Visibility Editor -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
+                        <div class="md:col-span-4 space-y-1">
+                            <label class="block text-[11px] font-bold text-slate-400">تعديل اسم المستودع (Rename):</label>
+                            <input type="text" id="editRepoNameInput" class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-white code-font outline-none">
+                        </div>
+                        <div class="md:col-span-5 space-y-1">
+                            <label class="block text-[11px] font-bold text-slate-400">وصف المستودع (Description):</label>
+                            <input type="text" id="editRepoDescInput" placeholder="وصف قصير للمشروع..." class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                        </div>
+                        <div class="md:col-span-3 flex gap-2">
+                            <select id="editRepoPrivateSelect" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white outline-none">
+                                <option value="false">🌐 عام (Public)</option>
+                                <option value="true">🔒 خاص (Private)</option>
+                            </select>
+                            <button type="button" id="saveRepoMetaBtn" class="flex-1 py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shrink-0">
+                                حفظ التعديل
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- File Picker inside the Selected Repo -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+                        <div class="flex-1 flex flex-col sm:flex-row sm:items-center gap-2">
+                            <label class="text-xs font-bold text-slate-300 shrink-0">📄 الملف المراد تعديله أو إضافته:</label>
+                            <select id="repoFilesSelect" class="flex-1 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs text-emerald-300 code-font outline-none">
+                                <option value="index.html">index.html</option>
+                            </select>
+                            <input type="text" id="customFilePathInput" placeholder="أو اكتب اسم ملف جديد مثل style.css"
+                                class="sm:w-56 bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-white code-font outline-none">
+                        </div>
+                        <button type="button" id="reloadFileContentBtn" class="px-4 py-2 rounded-xl bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-300 text-xs font-bold transition shrink-0">
+                            📥 إعادة سحب الكود من المستودع
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CREATE NEW REPO NAME INPUT (Shown in Create Mode) -->
+            <div id="createRepoNameBox" class="space-y-2">
+                <label for="repoNameInput" class="block text-xs font-bold text-slate-300">اسم المستودع الجديد (سيكون جزءاً من رابط موقعك):</label>
                 <div class="flex flex-col sm:flex-row gap-2">
                     <input type="text" id="repoNameInput" placeholder="my-awesome-site"
                         class="flex-1 bg-slate-900/90 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white code-font outline-none transition">
@@ -151,19 +268,25 @@
                 </div>
             </div>
 
-            <!-- Upload or Paste Switch & Actions -->
-            <div class="space-y-3">
+            <!-- CODE EDITOR & UPLOAD WORKSPACE (Shared between Create & Edit) -->
+            <div class="space-y-3 pt-2 border-t border-slate-800/80">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <label class="text-xs font-bold text-slate-300">كود ملف <code class="code-font text-emerald-400">index.html</code>:</label>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-slate-200">محرر الكود المباشر (<code id="currentEditingFileLabel" class="text-emerald-400 code-font">index.html</code>):</label>
+                        <span id="codeStatusPill" class="hidden px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 text-[10px] font-bold">تم سحب الكود من GitHub</span>
+                    </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <label for="fileUploadInput" class="cursor-pointer px-3.5 py-2 rounded-xl bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-300 text-xs font-bold transition flex items-center gap-1.5">
-                            <span>📂 اختيار ملف HTML من الهاتف</span>
-                            <input type="file" id="fileUploadInput" accept=".html,.htm,.txt" class="hidden">
+                            <span>📂 استبدال بملف من الهاتف</span>
+                            <input type="file" id="fileUploadInput" accept=".html,.htm,.txt,.css,.js,.json" class="hidden">
                         </label>
                         <button type="button" id="loadSampleBtn" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
                             ✨ تجربة كود جاهز
                         </button>
-                        <button type="button" id="previewHtmlBtn" class="px-3 py-2 rounded-xl bg-blue-600/20 border border-blue-500/40 hover:bg-blue-600/30 text-blue-300 text-xs font-bold transition">
+                        <button type="button" id="downloadCurrentCodeBtn" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                            💾 تنزيل الملف
+                        </button>
+                        <button type="button" id="previewHtmlBtn" class="px-3.5 py-2 rounded-xl bg-blue-600/20 border border-blue-500/40 hover:bg-blue-600/30 text-blue-300 text-xs font-bold transition">
                             👁️ معاينة الكود
                         </button>
                     </div>
@@ -174,11 +297,16 @@
                     <button type="button" id="clearCodeBtn" class="text-red-400 hover:underline font-bold">تفريغ الكود</button>
                 </div>
 
-                <textarea id="htmlCodeInput" rows="10" placeholder="<!DOCTYPE html>&#10;<html>&#10;<head>&#10;  <title>موقعي</title>&#10;</head>&#10;<body>&#10;  <h1>مرحباً بكم في موقعي!</h1>&#10;</body>&#10;</html>"
+                <textarea id="htmlCodeInput" rows="12" placeholder="<!DOCTYPE html>&#10;<html>&#10;<head>&#10;  <title>موقعي</title>&#10;</head>&#10;<body>&#10;  <h1>مرحباً بكم في موقعي!</h1>&#10;</body>&#10;</html>"
                     class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl p-4 text-xs sm:text-sm text-emerald-300 code-font outline-none transition leading-relaxed resize-y"></textarea>
+
+                <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                    <span id="charCountInfo">عدد الأحرف: 0 | الأسطر: 1</span>
+                    <span>يدعم التعديل المباشر واللصق واللغة العربية بالكامل (UTF-8)</span>
+                </div>
             </div>
 
-            <!-- Deploy Button -->
+            <!-- Main Action Button -->
             <button type="button" id="deployBtn" class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 active:scale-[0.99] text-white font-extrabold text-base shadow-xl shadow-blue-600/20 transition flex items-center justify-center gap-3">
                 <svg id="deploySpinner" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -207,7 +335,7 @@
 
                 <div id="stepFile" class="p-4 rounded-xl border border-slate-700 bg-slate-900/50 transition">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-xs font-bold text-slate-300">2. رفع ملف index.html</span>
+                        <span class="text-xs font-bold text-slate-300">2. رفع وتحديث الكود</span>
                         <span id="stepFileIcon" class="text-sm">⏳</span>
                     </div>
                     <p id="stepFileDesc" class="text-[11px] text-slate-400">بانتظار البدء...</p>
@@ -227,13 +355,13 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                         <span class="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold mb-1">
-                            🎉 تم تجهيز موقعك بنجاح!
+                            🎉 تمت العملية بنجاح!
                         </span>
                         <h3 class="text-sm font-bold text-white">رابط موقعك المباشر على GitHub Pages:</h3>
                     </div>
                     <div id="liveCheckBadge" class="px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2 self-start sm:self-auto">
                         <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                        <span id="liveCheckText">جاري تجهيز السيرفر (قد يستغرق 30-60 ثانية)...</span>
+                        <span id="liveCheckText">جاري تحديث السيرفر (قد يستغرق 20-45 ثانية)...</span>
                     </div>
                 </div>
 
@@ -265,7 +393,7 @@
         <!-- History of Deployed Sites -->
         <section class="glass-card rounded-2xl p-6 space-y-4">
             <div class="flex items-center justify-between">
-                <h2 class="text-sm font-bold text-slate-300">📂 سجل المواقع التي نشرتها من هذا الجهاز</h2>
+                <h2 class="text-sm font-bold text-slate-300">📂 سجل آخر المواقع التي نشرتها أو حدثتها من جهازك</h2>
                 <button type="button" id="clearHistoryBtn" class="text-xs text-slate-400 hover:text-red-400 transition">مسح السجل</button>
             </div>
             <div id="historyList" class="space-y-2 text-xs text-slate-400">
@@ -275,7 +403,7 @@
     </div>
 
     <footer class="text-center text-xs text-slate-500 mt-8 pb-4">
-        يعمل مباشرة عبر GitHub REST API v3 — مجاني بالكامل وآمن 100%
+        يعمل مباشرة عبر GitHub REST API v3 — استوديو نشر وتعديل متكامل 100% مجاني وآمن
     </footer>
 
     <script>
@@ -292,8 +420,12 @@
             }
         };
 
-        // State
+        // Application State
         let currentUsername = storage.get('gh_deployer_username') || '';
+        let currentMode = 'create'; // 'create' or 'edit'
+        let allUserRepos = [];
+        let selectedRepo = null; // Full repo object when in 'edit' mode
+        let currentFileSha = null;
         let isDeploying = false;
         let statusPollTimer = null;
 
@@ -306,18 +438,55 @@
         const userBadge = document.getElementById('userBadge');
         const userAvatar = document.getElementById('userAvatar');
         const userName = document.getElementById('userName');
+        const userRepoCount = document.getElementById('userRepoCount');
 
+        // Mode Switcher & Panels
+        const modeCreateBtn = document.getElementById('modeCreateBtn');
+        const modeEditBtn = document.getElementById('modeEditBtn');
+        const existingReposPanel = document.getElementById('existingReposPanel');
+        const createRepoNameBox = document.getElementById('createRepoNameBox');
+
+        // Existing Repos Elements
+        const repoSearchInput = document.getElementById('repoSearchInput');
+        const refreshReposBtn = document.getElementById('refreshReposBtn');
+        const reposGridContainer = document.getElementById('reposGridContainer');
+        const selectedRepoManager = document.getElementById('selectedRepoManager');
+        const activeRepoTitle = document.getElementById('activeRepoTitle');
+        const activeRepoPagesBadge = document.getElementById('activeRepoPagesBadge');
+        const activeRepoGithubLink = document.getElementById('activeRepoGithubLink');
+        const openDeleteModalBtn = document.getElementById('openDeleteModalBtn');
+
+        const editRepoNameInput = document.getElementById('editRepoNameInput');
+        const editRepoDescInput = document.getElementById('editRepoDescInput');
+        const editRepoPrivateSelect = document.getElementById('editRepoPrivateSelect');
+        const saveRepoMetaBtn = document.getElementById('saveRepoMetaBtn');
+
+        const repoFilesSelect = document.getElementById('repoFilesSelect');
+        const customFilePathInput = document.getElementById('customFilePathInput');
+        const reloadFileContentBtn = document.getElementById('reloadFileContentBtn');
+
+        // Delete Modal
+        const deleteRepoModal = document.getElementById('deleteRepoModal');
+        const deleteRepoTargetName = document.getElementById('deleteRepoTargetName');
+        const cancelDeleteRepoBtn = document.getElementById('cancelDeleteRepoBtn');
+        const confirmDeleteRepoBtn = document.getElementById('confirmDeleteRepoBtn');
+
+        // Create & Editor Elements
         const repoNameInput = document.getElementById('repoNameInput');
         const randomNameBtn = document.getElementById('randomNameBtn');
         const expectedUrlPreview = document.getElementById('expectedUrlPreview');
+        const currentEditingFileLabel = document.getElementById('currentEditingFileLabel');
+        const codeStatusPill = document.getElementById('codeStatusPill');
 
         const fileUploadInput = document.getElementById('fileUploadInput');
         const loadSampleBtn = document.getElementById('loadSampleBtn');
+        const downloadCurrentCodeBtn = document.getElementById('downloadCurrentCodeBtn');
         const previewHtmlBtn = document.getElementById('previewHtmlBtn');
         const fileLoadedBanner = document.getElementById('fileLoadedBanner');
         const fileLoadedName = document.getElementById('fileLoadedName');
         const clearCodeBtn = document.getElementById('clearCodeBtn');
         const htmlCodeInput = document.getElementById('htmlCodeInput');
+        const charCountInfo = document.getElementById('charCountInfo');
 
         const deployBtn = document.getElementById('deployBtn');
         const deploySpinner = document.getElementById('deploySpinner');
@@ -378,7 +547,7 @@
             }, 4000);
         }
 
-        // UTF-8 Safe Base64 Encoding (supports Arabic & Emojis without errors)
+        // UTF-8 Safe Base64 Encode & Decode (Supports Arabic & Emojis 100%)
         function encodeUnicodeBase64(str) {
             const utf8Bytes = new TextEncoder().encode(str);
             let binaryString = '';
@@ -387,6 +556,16 @@
                 binaryString += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
             }
             return btoa(binaryString);
+        }
+
+        function decodeUnicodeBase64(base64Str) {
+            const cleanBase64 = (base64Str || '').replace(/\s/g, '');
+            const binaryString = atob(cleanBase64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return new TextDecoder('utf-8').decode(bytes);
         }
 
         // Sanitize Repository Name
@@ -403,6 +582,51 @@
             const cleanRepo = sanitizeRepoName(repoNameInput.value) || 'my-awesome-site';
             const userPart = currentUsername || 'username';
             expectedUrlPreview.textContent = `https://${userPart}.github.io/${cleanRepo}/`;
+        }
+
+        function updateCharStats() {
+            const val = htmlCodeInput.value || '';
+            const lines = val ? val.split('\n').length : 1;
+            charCountInfo.textContent = `عدد الأحرف: ${val.length.toLocaleString('en-US')} | الأسطر: ${lines.toLocaleString('en-US')}`;
+        }
+
+        function getActiveTargetFilePath() {
+            if (currentMode === 'create') return 'index.html';
+            const custom = customFilePathInput.value.trim().replace(/^\/+/, '');
+            if (custom) return custom;
+            return repoFilesSelect.value || 'index.html';
+        }
+
+        function updateActionLabels() {
+            const targetFile = getActiveTargetFilePath();
+            currentEditingFileLabel.textContent = targetFile;
+            if (currentMode === 'create') {
+                deployBtnText.textContent = '🚀 إنشاء المستودع ونشر الموقع الآن';
+            } else {
+                const rName = selectedRepo ? selectedRepo.name : '...';
+                deployBtnText.textContent = `💾 حفظ وتحديث (${targetFile}) في المستودع [${rName}] وتحديث الموقع`;
+            }
+        }
+
+        // Switch Mode ('create' vs 'edit')
+        function switchMode(mode) {
+            currentMode = mode;
+            if (mode === 'create') {
+                modeCreateBtn.className = 'px-4 py-2.5 rounded-lg text-xs font-extrabold transition mode-tab-active';
+                modeEditBtn.className = 'px-4 py-2.5 rounded-lg text-xs font-extrabold text-slate-300 hover:text-white transition';
+                existingReposPanel.classList.add('hidden');
+                createRepoNameBox.classList.remove('hidden');
+                codeStatusPill.classList.add('hidden');
+            } else {
+                modeEditBtn.className = 'px-4 py-2.5 rounded-lg text-xs font-extrabold transition mode-tab-active';
+                modeCreateBtn.className = 'px-4 py-2.5 rounded-lg text-xs font-extrabold text-slate-300 hover:text-white transition';
+                existingReposPanel.classList.remove('hidden');
+                createRepoNameBox.classList.add('hidden');
+                if (tokenInput.value.trim() && allUserRepos.length === 0) {
+                    fetchUserRepositories();
+                }
+            }
+            updateActionLabels();
         }
 
         // Logger
@@ -437,7 +661,7 @@
             descEl.textContent = text;
         }
 
-        // Verify GitHub Token & Fetch User
+        // Verify GitHub Token & Fetch User + Repositories
         async function verifyToken(token, silent = false) {
             if (!token) {
                 if (!silent) showToast('يرجى إدخال رمز الوصول (PAT) أولاً', 'error');
@@ -470,6 +694,8 @@
                 tokenSavedStatus.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold';
                 updateExpectedUrl();
                 if (!silent) showToast(`تم الاتصال بنجاح بحساب ${data.login}`, 'success');
+
+                await fetchUserRepositories(true);
                 return data.login;
             } catch (err) {
                 tokenSavedStatus.textContent = 'التوكن غير صالح';
@@ -479,6 +705,290 @@
             } finally {
                 verifyTokenBtn.disabled = false;
                 verifyTokenBtn.textContent = 'فحص وحفظ التوكن';
+            }
+        }
+
+        // Fetch All User Repositories
+        async function fetchUserRepositories(silent = false) {
+            const token = tokenInput.value.trim();
+            if (!token) {
+                if (!silent) showToast('يرجى إدخال التوكن أولاً', 'error');
+                return;
+            }
+            refreshReposBtn.disabled = true;
+            refreshReposBtn.textContent = '⏳ جاري جلب المستودعات...';
+
+            try {
+                const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+                if (!res.ok) throw new Error('تعذر جلب قائمة المستودعات');
+                allUserRepos = await res.json();
+                userRepoCount.textContent = `${allUserRepos.length} مستودع متاح`;
+                renderReposGrid();
+                if (!silent) showToast(`تم جلب ${allUserRepos.length} مستودع من حسابك`, 'success');
+            } catch (err) {
+                if (!silent) showToast(err.message, 'error');
+            } finally {
+                refreshReposBtn.disabled = false;
+                refreshReposBtn.textContent = '🔄 تحديث قائمة المستودعات';
+            }
+        }
+
+        // Render Repositories Grid
+        function renderReposGrid() {
+            const query = repoSearchInput.value.trim().toLowerCase();
+            const filtered = allUserRepos.filter(r => {
+                const matchName = r.name.toLowerCase().includes(query);
+                const matchDesc = (r.description || '').toLowerCase().includes(query);
+                return matchName || matchDesc;
+            });
+
+            if (!filtered.length) {
+                reposGridContainer.innerHTML = `<div class="col-span-2 text-center py-6 text-xs text-slate-400">لا توجد مستودعات مطابقة للبحث.</div>`;
+                return;
+            }
+
+            reposGridContainer.innerHTML = '';
+            filtered.forEach(repo => {
+                const isSelected = selectedRepo && selectedRepo.name === repo.name;
+                const card = document.createElement('div');
+                card.className = `p-3.5 rounded-xl border border-slate-700/80 bg-slate-900/70 hover:border-slate-500 cursor-pointer transition flex flex-col justify-between gap-2 ${isSelected ? 'repo-card-selected' : ''}`;
+
+                const updatedDate = new Date(repo.updated_at).toLocaleDateString('ar-IQ');
+                const pagesBadge = repo.has_pages
+                    ? `<span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Pages مفعل 🌐</span>`
+                    : `<span class="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px]">بدون Pages</span>`;
+                const visBadge = repo.private
+                    ? `<span class="text-[10px] text-amber-400 font-semibold">🔒 خاص</span>`
+                    : `<span class="text-[10px] text-slate-400">🌐 عام</span>`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-extrabold text-xs sm:text-sm text-white code-font truncate">${repo.name}</span>
+                            ${pagesBadge}
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1 line-clamp-1">${repo.description || 'بدون وصف'}</p>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/80">
+                        ${visBadge}
+                        <span>آخر تحديث: ${updatedDate}</span>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => selectRepositoryForEdit(repo));
+                reposGridContainer.appendChild(card);
+            });
+        }
+
+        // Select a Repository to Manage & Pull its Files/Code
+        async function selectRepositoryForEdit(repo) {
+            selectedRepo = repo;
+            renderReposGrid();
+
+            selectedRepoManager.classList.remove('hidden');
+            activeRepoTitle.textContent = repo.name;
+            activeRepoGithubLink.href = repo.html_url;
+
+            if (repo.has_pages) {
+                const pageUrl = `https://${repo.owner.login}.github.io/${repo.name}/`;
+                activeRepoPagesBadge.innerHTML = `<a href="${pageUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:underline">🟢 موقع Pages فعال ↗</a>`;
+            } else {
+                activeRepoPagesBadge.textContent = '⚪ Pages غير مفعل بعد';
+            }
+
+            editRepoNameInput.value = repo.name;
+            editRepoDescInput.value = repo.description || '';
+            editRepoPrivateSelect.value = repo.private ? 'true' : 'false';
+            customFilePathInput.value = '';
+
+            updateActionLabels();
+            await loadRepositoryFilesList(repo);
+        }
+
+        // Load File List of Selected Repository Root
+        async function loadRepositoryFilesList(repo) {
+            const token = tokenInput.value.trim();
+            const branch = repo.default_branch || 'main';
+            repoFilesSelect.innerHTML = '<option value="index.html">جاري جلب ملفات المستودع...</option>';
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents?ref=${encodeURIComponent(branch)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+
+                repoFilesSelect.innerHTML = '';
+                if (res.ok) {
+                    const items = await res.json();
+                    const files = Array.isArray(items) ? items.filter(i => i.type === 'file') : [];
+
+                    // Sort index.html first if present
+                    files.sort((a, b) => (a.name === 'index.html' ? -1 : b.name === 'index.html' ? 1 : a.name.localeCompare(b.name)));
+
+                    if (files.length > 0) {
+                        files.forEach(f => {
+                            const opt = document.createElement('option');
+                            opt.value = f.path;
+                            opt.textContent = `${f.path} (${(f.size / 1024).toFixed(1)} KB)`;
+                            repoFilesSelect.appendChild(opt);
+                        });
+                    } else {
+                        const opt = document.createElement('option');
+                        opt.value = 'index.html';
+                        opt.textContent = 'index.html (ملف جديد)';
+                        repoFilesSelect.appendChild(opt);
+                    }
+                } else {
+                    const opt = document.createElement('option');
+                    opt.value = 'index.html';
+                    opt.textContent = 'index.html (المستودع فارغ - سيتم إنشاؤه)';
+                    repoFilesSelect.appendChild(opt);
+                }
+
+                await fetchFileContentFromRepo();
+            } catch (e) {
+                repoFilesSelect.innerHTML = '<option value="index.html">index.html</option>';
+            }
+        }
+
+        // Fetch & Decode File Content into Editor
+        async function fetchFileContentFromRepo() {
+            if (!selectedRepo) return;
+            const token = tokenInput.value.trim();
+            const filePath = getActiveTargetFilePath();
+            const branch = selectedRepo.default_branch || 'main';
+
+            updateActionLabels();
+            reloadFileContentBtn.disabled = true;
+            reloadFileContentBtn.textContent = '⏳ جاري سحب الكود...';
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${selectedRepo.owner.login}/${selectedRepo.name}/contents/${encodeURIComponent(filePath)}?ref=${encodeURIComponent(branch)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    currentFileSha = data.sha;
+                    const decoded = decodeUnicodeBase64(data.content || '');
+                    htmlCodeInput.value = decoded;
+                    updateCharStats();
+                    codeStatusPill.textContent = `تم سحب ${filePath} من المستودع ✓`;
+                    codeStatusPill.className = 'px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold';
+                    codeStatusPill.classList.remove('hidden');
+                    showToast(`تم سحب كود ${filePath} بنجاح! يمكنك التعديل عليه الآن`, 'success');
+                } else if (res.status === 404) {
+                    currentFileSha = null;
+                    codeStatusPill.textContent = `ملف جديد (${filePath}) سيتم إنشاؤه`;
+                    codeStatusPill.className = 'px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold';
+                    codeStatusPill.classList.remove('hidden');
+                    showToast(`الملف ${filePath} غير موجود مسبقاً، اكتب الكود وسيتم إنشاؤه عند الحفظ`, 'info');
+                } else {
+                    throw new Error('تعذر قراءة الملف من المستودع');
+                }
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                reloadFileContentBtn.disabled = false;
+                reloadFileContentBtn.textContent = '📥 إعادة سحب الكود من المستودع';
+            }
+        }
+
+        // Save Repository Metadata (Rename, Description, Public/Private)
+        async function updateRepositoryMetadata() {
+            if (!selectedRepo) return;
+            const token = tokenInput.value.trim();
+            const newName = sanitizeRepoName(editRepoNameInput.value);
+            const newDesc = editRepoDescInput.value.trim();
+            const isPrivate = editRepoPrivateSelect.value === 'true';
+
+            if (!newName) {
+                showToast('يرجى إدخال اسم صالح للمستودع', 'error');
+                return;
+            }
+
+            saveRepoMetaBtn.disabled = true;
+            saveRepoMetaBtn.textContent = 'جاري الحفظ...';
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${selectedRepo.owner.login}/${selectedRepo.name}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: newName,
+                        description: newDesc,
+                        private: isPrivate
+                    })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'فشل تحديث بيانات المستودع');
+                }
+
+                const updatedRepo = await res.json();
+                selectedRepo = updatedRepo;
+                activeRepoTitle.textContent = updatedRepo.name;
+                activeRepoGithubLink.href = updatedRepo.html_url;
+                editRepoNameInput.value = updatedRepo.name;
+
+                await fetchUserRepositories(true);
+                updateActionLabels();
+                showToast(`تم تحديث إعدادات المستودع (${updatedRepo.name}) بنجاح!`, 'success');
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                saveRepoMetaBtn.disabled = false;
+                saveRepoMetaBtn.textContent = 'حفظ التعديل';
+            }
+        }
+
+        // Delete Selected Repository
+        async function deleteSelectedRepository() {
+            if (!selectedRepo) return;
+            const token = tokenInput.value.trim();
+            confirmDeleteRepoBtn.disabled = true;
+            confirmDeleteRepoBtn.textContent = 'جاري الحذف...';
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${selectedRepo.owner.login}/${selectedRepo.name}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+
+                if (res.status === 204) {
+                    showToast(`تم حذف المستودع ${selectedRepo.name} نهائياً`, 'success');
+                    deleteRepoModal.classList.add('hidden');
+                    selectedRepo = null;
+                    selectedRepoManager.classList.add('hidden');
+                    htmlCodeInput.value = '';
+                    await fetchUserRepositories(true);
+                } else {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'فشل الحذف (تأكد من صلاحية delete_repo في التوكن)');
+                }
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                confirmDeleteRepoBtn.disabled = false;
+                confirmDeleteRepoBtn.textContent = 'نعم، احذف المستودع';
             }
         }
 
@@ -528,7 +1038,7 @@
         }
 
         // Poll GitHub Pages status until live
-        function startPagesStatusPolling(token, owner, repo, pageUrl) {
+        function startPagesStatusPolling(token, owner, repo) {
             if (statusPollTimer) clearInterval(statusPollTimer);
             let attempts = 0;
             statusPollTimer = setInterval(async () => {
@@ -551,23 +1061,24 @@
                         if (data.status === 'built') {
                             clearInterval(statusPollTimer);
                             liveCheckBadge.className = 'px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2';
-                            liveCheckBadge.innerHTML = '<span>🟢 الموقع يعمل ومرفوع بالكامل (Live)!</span>';
-                            addLog('تم اكتمال بناء الموقع على GitHub Pages وهو متاح للتصفح الآن!', 'success');
+                            liveCheckBadge.innerHTML = '<span>🟢 الموقع محدث ويعمل بالكامل (Live)!</span>';
+                            addLog('تم اكتمال بناء وتحديث الموقع على GitHub Pages وهو متاح للتصفح الآن!', 'success');
                         } else {
-                            liveCheckText.textContent = `حالة البناء في GitHub: ${data.status || 'جاري التجهيز'}... (${attempts * 5} ثانية)`;
+                            const statusSpan = document.getElementById('liveCheckText');
+                            if (statusSpan) {
+                                statusSpan.textContent = `حالة البناء في GitHub: ${data.status || 'جاري التجهيز'}... (${attempts * 5} ثانية)`;
+                            }
                         }
                     }
                 } catch (e) {}
             }, 5000);
         }
 
-        // Main Deployment Workflow
-        async function deployWebsite() {
+        // Main Deployment / Code Update Workflow
+        async function deployOrUpdateWebsite() {
             if (isDeploying) return;
 
             const token = tokenInput.value.trim();
-            const rawRepoName = repoNameInput.value.trim();
-            const cleanRepoName = sanitizeRepoName(rawRepoName);
             const htmlContent = htmlCodeInput.value;
 
             if (!token) {
@@ -575,19 +1086,34 @@
                 tokenInput.focus();
                 return;
             }
-            if (!cleanRepoName) {
-                showToast('الرجاء كتابة اسم للمشروع باللغة الإنجليزية أو الأرقام', 'error');
-                repoNameInput.focus();
-                return;
+
+            let targetRepoName = '';
+            let targetBranch = 'main';
+            let targetFilePath = getActiveTargetFilePath();
+
+            if (currentMode === 'create') {
+                targetRepoName = sanitizeRepoName(repoNameInput.value);
+                if (!targetRepoName) {
+                    showToast('الرجاء كتابة اسم للمستودع الجديد باللغة الإنجليزية أو الأرقام', 'error');
+                    repoNameInput.focus();
+                    return;
+                }
+                repoNameInput.value = targetRepoName;
+                updateExpectedUrl();
+            } else {
+                if (!selectedRepo) {
+                    showToast('الرجاء اختيار مستودع من قائمة مستودعاتك أولاً', 'error');
+                    return;
+                }
+                targetRepoName = selectedRepo.name;
+                targetBranch = selectedRepo.default_branch || 'main';
             }
+
             if (!htmlContent.trim()) {
-                showToast('الرجاء رفع ملف index.html أو لصق كود HTML أولاً', 'error');
+                showToast('حقل الكود فارغ! اكتب أو الصق الكود أولاً', 'error');
                 htmlCodeInput.focus();
                 return;
             }
-
-            repoNameInput.value = cleanRepoName;
-            updateExpectedUrl();
 
             isDeploying = true;
             deployBtn.disabled = true;
@@ -609,67 +1135,69 @@
             };
 
             try {
-                // Verify user first
                 addLog('جاري التحقق من الحساب وصلاحيات التوكن...');
-                const username = await verifyToken(token, true);
+                const username = currentUsername || await verifyToken(token, true);
                 if (!username) {
                     throw new Error('فشل التحقق من التوكن. تأكد من صحته ومن صلاحية repo.');
                 }
-                addLog(`تم تأكيد الحساب: @${username}`, 'success');
 
-                // STEP 1: Create or Check Repository
-                setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'active', 'جاري إنشاء المستودع العام...');
-                addLog(`جاري إنشاء المستودع (${cleanRepoName})...`);
+                // STEP 1: Repository Check or Creation
+                setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'active', 'جاري تجهيز المستودع...');
+                if (currentMode === 'create') {
+                    addLog(`جاري إنشاء المستودع (${targetRepoName})...`);
+                    const createRepoRes = await fetch('https://api.github.com/user/repos', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({
+                            name: targetRepoName,
+                            description: 'Deployed via GitHub Pages Studio',
+                            private: false,
+                            auto_init: false
+                        })
+                    });
 
-                const createRepoRes = await fetch('https://api.github.com/user/repos', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                        name: cleanRepoName,
-                        description: 'Deployed automatically via GitHub Pages Auto-Deployer',
-                        private: false,
-                        auto_init: false
-                    })
-                });
-
-                if (createRepoRes.status === 201) {
-                    setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'done', 'تم إنشاء المستودع بنجاح ✓');
-                    addLog(`تم إنشاء المستودع ${username}/${cleanRepoName} بنجاح.`, 'success');
-                } else if (createRepoRes.status === 422) {
-                    setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'done', 'المستودع موجود مسبقاً (سيتم التحديث) ✓');
-                    addLog(`المستودع ${cleanRepoName} موجود مسبقاً، سيتم تحديث ملف index.html بداخله.`, 'warn');
+                    if (createRepoRes.status === 201) {
+                        setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'done', 'تم إنشاء المستودع بنجاح ✓');
+                        addLog(`تم إنشاء المستودع ${username}/${targetRepoName} بنجاح.`, 'success');
+                    } else if (createRepoRes.status === 422) {
+                        setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'done', 'المستودع موجود مسبقاً (سيتم التحديث) ✓');
+                        addLog(`المستودع ${targetRepoName} موجود مسبقاً، سيتم تحديث الملفات بداخله.`, 'warn');
+                    } else {
+                        const errData = await createRepoRes.json().catch(() => ({}));
+                        throw new Error(`فشل إنشاء المستودع: ${errData.message || createRepoRes.statusText}`);
+                    }
                 } else {
-                    const errData = await createRepoRes.json().catch(() => ({}));
-                    throw new Error(`فشل إنشاء المستودع: ${errData.message || createRepoRes.statusText}`);
+                    setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'done', `المستودع المحدد: ${targetRepoName} ✓`);
+                    addLog(`العمل على المستودع الحالي: ${username}/${targetRepoName} (فرع ${targetBranch})`, 'success');
                 }
 
-                // STEP 2: Upload index.html to main branch
-                setStepState(stepFile, stepFileIcon, stepFileDesc, 'active', 'جاري رفع ملف index.html إلى فرع main...');
-                addLog('جاري فحص ما إذا كان ملف index.html موجوداً مسبقاً...');
+                // STEP 2: Upload or Update Target File
+                setStepState(stepFile, stepFileIcon, stepFileDesc, 'active', `جاري رفع/تحديث ${targetFilePath}...`);
+                addLog(`جاري فحص بصمة الملف (${targetFilePath}) على الفرع ${targetBranch}...`);
 
-                let existingFileSha = null;
-                const getFileRes = await fetch(`https://api.github.com/repos/${username}/${cleanRepoName}/contents/index.html?ref=main`, {
+                let existingSha = null;
+                const getFileRes = await fetch(`https://api.github.com/repos/${username}/${targetRepoName}/contents/${encodeURIComponent(targetFilePath)}?ref=${encodeURIComponent(targetBranch)}`, {
                     headers
                 });
                 if (getFileRes.ok) {
                     const fileInfo = await getFileRes.json();
-                    existingFileSha = fileInfo.sha;
-                    addLog('تم العثور على نسخة سابقة من index.html، سيتم استبدالها.', 'warn');
+                    existingSha = fileInfo.sha;
+                    addLog(`تم جلب بصمة الملف القديم (SHA) لتحديثه مباشرة.`, 'info');
                 }
 
-                addLog('جاري تشفير الكود بصيغة Base64 (يدعم العربية بالكامل) ورفعه...');
+                addLog(`جاري تشفير الكود بصيغة Base64 ورفعه إلى ${targetFilePath}...`);
                 const encodedContent = encodeUnicodeBase64(htmlContent);
 
                 const putBody = {
-                    message: 'Deploy index.html to main branch',
+                    message: `Update ${targetFilePath} via GitHub Pages Studio`,
                     content: encodedContent,
-                    branch: 'main'
+                    branch: targetBranch
                 };
-                if (existingFileSha) {
-                    putBody.sha = existingFileSha;
+                if (existingSha) {
+                    putBody.sha = existingSha;
                 }
 
-                const uploadRes = await fetch(`https://api.github.com/repos/${username}/${cleanRepoName}/contents/index.html`, {
+                const uploadRes = await fetch(`https://api.github.com/repos/${username}/${targetRepoName}/contents/${encodeURIComponent(targetFilePath)}`, {
                     method: 'PUT',
                     headers,
                     body: JSON.stringify(putBody)
@@ -677,74 +1205,80 @@
 
                 if (!uploadRes.ok) {
                     const errData = await uploadRes.json().catch(() => ({}));
-                    throw new Error(`فشل رفع ملف index.html: ${errData.message || uploadRes.statusText}`);
+                    throw new Error(`فشل رفع/تحديث الملف: ${errData.message || uploadRes.statusText}`);
                 }
 
-                setStepState(stepFile, stepFileIcon, stepFileDesc, 'done', 'تم رفع index.html على فرع main ✓');
-                addLog('تم رفع ملف index.html بنجاح إلى الفرع الرئيسي (main).', 'success');
+                const uploadData = await uploadRes.json();
+                if (uploadData.content && uploadData.content.sha) {
+                    currentFileSha = uploadData.content.sha;
+                }
 
-                // STEP 3: Enable GitHub Pages on branch 'main'
-                setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'active', 'جاري تفعيل GitHub Pages على فرع main...');
-                addLog('جاري تفعيل خدمة GitHub Pages على الفرع main والمسار / ...');
+                setStepState(stepFile, stepFileIcon, stepFileDesc, 'done', `تم حفظ ${targetFilePath} بنجاح ✓`);
+                addLog(`تم حفظ وتحديث الملف ${targetFilePath} على فرع ${targetBranch} بنجاح!`, 'success');
 
-                const pagesRes = await fetch(`https://api.github.com/repos/${username}/${cleanRepoName}/pages`, {
+                // STEP 3: Enable or Verify GitHub Pages
+                setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'active', 'جاري تفعيل/تحديث GitHub Pages...');
+                addLog(`جاري التأكد من تفعيل خدمة GitHub Pages على الفرع ${targetBranch}...`);
+
+                const pagesRes = await fetch(`https://api.github.com/repos/${username}/${targetRepoName}/pages`, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
                         source: {
-                            branch: 'main',
+                            branch: targetBranch,
                             path: '/'
                         }
                     })
                 });
 
-                let finalUrl = `https://${username}.github.io/${cleanRepoName}/`;
+                let finalUrl = `https://${username}.github.io/${targetRepoName}/`;
 
                 if (pagesRes.status === 201) {
                     const pagesData = await pagesRes.json().catch(() => ({}));
                     if (pagesData.html_url) finalUrl = pagesData.html_url;
                     setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'done', 'تم تفعيل GitHub Pages بنجاح ✓');
-                    addLog('تم تفعيل GitHub Pages على فرع main بنجاح!', 'success');
+                    addLog('تم تفعيل GitHub Pages بنجاح!', 'success');
                 } else if (pagesRes.status === 409) {
-                    // Already enabled, ensure it points to main
-                    await fetch(`https://api.github.com/repos/${username}/${cleanRepoName}/pages`, {
+                    await fetch(`https://api.github.com/repos/${username}/${targetRepoName}/pages`, {
                         method: 'PUT',
                         headers,
                         body: JSON.stringify({
                             source: {
-                                branch: 'main',
+                                branch: targetBranch,
                                 path: '/'
                             }
                         })
                     });
-                    setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'done', 'GitHub Pages مفعل ومربوط بفرع main ✓');
-                    addLog('خدمة GitHub Pages مفعلة مسبقاً وتم التأكد من ربطها بفرع main.', 'success');
+                    setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'done', 'GitHub Pages مفعل ويتم التحديث ✓');
+                    addLog('خدمة GitHub Pages مفعلة وجاري تحديث النسخة المنشورة.', 'success');
                 } else {
                     const errData = await pagesRes.json().catch(() => ({}));
-                    throw new Error(`فشل تفعيل GitHub Pages: ${errData.message || pagesRes.statusText}`);
+                    addLog(`ملاحظة Pages: ${errData.message || 'تأكد من أن المستودع Public لتفعيل Pages المجاني'}`, 'warn');
+                    setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'done', 'تم حفظ الكود في المستودع ✓');
                 }
 
                 // Show Result
                 finalSiteUrl.textContent = finalUrl;
                 finalSiteUrl.href = finalUrl;
                 openSiteBtn.href = finalUrl;
-                openRepoBtn.href = `https://github.com/${username}/${cleanRepoName}`;
+                openRepoBtn.href = `https://github.com/${username}/${targetRepoName}`;
                 resultCard.classList.remove('hidden');
 
                 liveCheckBadge.className = 'px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2';
-                liveCheckBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span><span id="liveCheckText">جاري بناء الصفحة على سيرفرات GitHub (30-60 ثانية)...</span>';
+                liveCheckBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span><span id="liveCheckText">جاري بناء التحديث على سيرفرات GitHub (20-45 ثانية)...</span>';
 
-                saveToHistory(`${username}/${cleanRepoName}`, finalUrl);
-                showToast('تم نشر الموقع وتفعيل GitHub Pages بنجاح!', 'success');
-                startPagesStatusPolling(token, username, cleanRepoName, finalUrl);
+                saveToHistory(`${username}/${targetRepoName}`, finalUrl);
+                await fetchUserRepositories(true);
+                showToast('تم حفظ الكود وتحديث الموقع بنجاح!', 'success');
+                startPagesStatusPolling(token, username, targetRepoName);
 
             } catch (error) {
                 addLog(`خطأ: ${error.message}`, 'error');
                 showToast(error.message, 'error');
                 if (stepRepo.classList.contains('step-active')) {
-                    setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'error', 'فشل إنشاء المستودع');
+                    setStepState(stepRepo, stepRepoIcon, stepRepoDesc, 'error', 'فشل في المستودع');
                 } else if (stepFile.classList.contains('step-active')) {
-                    setStepState(stepFile, stepFileIcon, stepFileDesc, 'error', 'فشل رفع الملف');
+                    setStepState(stepFile, stepFileIcon, stepFileDesc, 'error', 'فشل رفع/تحديث الملف');
                 } else if (stepPages.classList.contains('step-active')) {
                     setStepState(stepPages, stepPagesIcon, stepPagesDesc, 'error', 'فشل تفعيل Pages');
                 }
@@ -752,11 +1286,14 @@
                 isDeploying = false;
                 deployBtn.disabled = false;
                 deploySpinner.classList.add('hidden');
-                deployBtnText.textContent = '🚀 إنشاء المستودع ونشر الموقع الآن';
+                updateActionLabels();
             }
         }
 
         // Event Listeners
+        modeCreateBtn.addEventListener('click', () => switchMode('create'));
+        modeEditBtn.addEventListener('click', () => switchMode('edit'));
+
         toggleTokenBtn.addEventListener('click', () => {
             if (tokenInput.type === 'password') {
                 tokenInput.type = 'text';
@@ -774,6 +1311,8 @@
         clearTokenBtn.addEventListener('click', () => {
             tokenInput.value = '';
             currentUsername = '';
+            allUserRepos = [];
+            selectedRepo = null;
             storage.remove('gh_deployer_token');
             storage.remove('gh_deployer_username');
             storage.remove('gh_deployer_avatar');
@@ -781,11 +1320,38 @@
             userBadge.classList.remove('flex');
             tokenSavedStatus.textContent = 'غير محفوظ';
             tokenSavedStatus.className = 'text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400';
+            selectedRepoManager.classList.add('hidden');
+            reposGridContainer.innerHTML = '<div class="col-span-2 text-center py-8 text-xs text-slate-400">تم مسح التوكن. أدخل التوكن لعرض مستودعاتك.</div>';
             updateExpectedUrl();
             showToast('تم مسح التوكن من المتصفح', 'info');
         });
 
+        repoSearchInput.addEventListener('input', renderReposGrid);
+        refreshReposBtn.addEventListener('click', () => fetchUserRepositories(false));
+
+        repoFilesSelect.addEventListener('change', () => {
+            customFilePathInput.value = '';
+            fetchFileContentFromRepo();
+        });
+
+        customFilePathInput.addEventListener('input', updateActionLabels);
+        reloadFileContentBtn.addEventListener('click', fetchFileContentFromRepo);
+        saveRepoMetaBtn.addEventListener('click', updateRepositoryMetadata);
+
+        openDeleteModalBtn.addEventListener('click', () => {
+            if (!selectedRepo) return;
+            deleteRepoTargetName.textContent = `${selectedRepo.owner.login}/${selectedRepo.name}`;
+            deleteRepoModal.classList.remove('hidden');
+        });
+
+        cancelDeleteRepoBtn.addEventListener('click', () => {
+            deleteRepoModal.classList.add('hidden');
+        });
+
+        confirmDeleteRepoBtn.addEventListener('click', deleteSelectedRepository);
+
         repoNameInput.addEventListener('input', updateExpectedUrl);
+        htmlCodeInput.addEventListener('input', updateCharStats);
 
         randomNameBtn.addEventListener('click', () => {
             const num = Math.floor(1000 + Math.random() * 9000);
@@ -799,10 +1365,11 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 htmlCodeInput.value = ev.target.result;
-                fileLoadedName.textContent = `تم تحميل الملف: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                updateCharStats();
+                fileLoadedName.textContent = `تم تحميل الملف من جهازك: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
                 fileLoadedBanner.classList.remove('hidden');
                 fileLoadedBanner.classList.add('flex');
-                if (!repoNameInput.value.trim()) {
+                if (currentMode === 'create' && !repoNameInput.value.trim()) {
                     const baseName = file.name.replace(/\.[^/.]+$/, '');
                     if (baseName.toLowerCase() !== 'index') {
                         repoNameInput.value = sanitizeRepoName(baseName);
@@ -811,7 +1378,7 @@
                     }
                     updateExpectedUrl();
                 }
-                showToast('تم قراءة ملف HTML بنجاح!', 'success');
+                showToast('تم قراءة الملف ووضعه في المحرر بنجاح!', 'success');
             };
             reader.readAsText(file, 'UTF-8');
         });
@@ -819,12 +1386,13 @@
         clearCodeBtn.addEventListener('click', () => {
             htmlCodeInput.value = '';
             fileUploadInput.value = '';
+            updateCharStats();
             fileLoadedBanner.classList.add('hidden');
             fileLoadedBanner.classList.remove('flex');
         });
 
         loadSampleBtn.addEventListener('click', () => {
-            if (!repoNameInput.value.trim()) {
+            if (currentMode === 'create' && !repoNameInput.value.trim()) {
                 repoNameInput.value = `demo-site-${Math.floor(100 + Math.random() * 900)}`;
                 updateExpectedUrl();
             }
@@ -833,7 +1401,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>موقعي المنشور تلقائياً</title>
+  <title>موقعي المحدث عبر GitHub Studio</title>
   <style>
     body {
       margin: 0;
@@ -870,19 +1438,39 @@
 </head>
 <body>
   <div class="card">
-    <h1>🚀 تم النشر بنجاح!</h1>
-    <p>تم إنشاء هذا المستودع ورفع ملف <strong>index.html</strong> وتفعيل <strong>GitHub Pages</strong> تلقائياً بضغطة زر واحدة.</p>
+    <h1>🚀 تم النشر والتحديث بنجاح!</h1>
+    <p>تم إدارة هذا المستودع وتحديث كود <strong>index.html</strong> وتفعيل <strong>GitHub Pages</strong> بضغطة زر واحدة.</p>
     <div class="badge">GitHub Pages Live ✓</div>
   </div>
 </body>
 </html>`;
-            showToast('تم إدراج كود HTML تجريبي جاهز للنشر', 'info');
+            updateCharStats();
+            showToast('تم إدراج كود HTML تجريبي جاهز للنشر أو التحديث', 'info');
+        });
+
+        downloadCurrentCodeBtn.addEventListener('click', () => {
+            const content = htmlCodeInput.value;
+            if (!content.trim()) {
+                showToast('المحرر فارغ حالياً', 'error');
+                return;
+            }
+            const fileName = getActiveTargetFilePath() || 'index.html';
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`تم تنزيل الملف ${fileName}`, 'success');
         });
 
         previewHtmlBtn.addEventListener('click', () => {
             const code = htmlCodeInput.value;
             if (!code.trim()) {
-                showToast('لا يوجد كود HTML لمعاينته حالياً', 'error');
+                showToast('لا يوجد كود لمعاينته حالياً', 'error');
                 return;
             }
             previewFrame.srcdoc = code;
@@ -894,7 +1482,7 @@
             previewFrame.srcdoc = '';
         });
 
-        deployBtn.addEventListener('click', deployWebsite);
+        deployBtn.addEventListener('click', deployOrUpdateWebsite);
 
         copyUrlBtn.addEventListener('click', () => {
             const url = finalSiteUrl.textContent.trim();
@@ -938,6 +1526,7 @@
                 verifyToken(savedToken, true);
             }
             updateExpectedUrl();
+            updateCharStats();
             renderHistory();
         });
     </script>
